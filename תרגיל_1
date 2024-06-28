@@ -1,0 +1,113 @@
+import json
+import ipywidgets as widgets
+from IPython.display import display, HTML
+from google.colab import drive
+
+# Mount Google Drive
+drive.mount('/content/drive')
+students = {}
+# Path to the TXT file in your Google Drive
+file_path = '/content/drive/MyDrive/students.json'
+with open(file_path, "r") as fid:
+    file = json.load(fid)
+    for line in file:
+        first_name = line["first_name"]
+        last_name = line["last_name"]
+        email = line["email"]
+        courses = line["cors"]
+        address = line["adress"]
+        full_name = f"{first_name} {last_name}"
+        students[full_name] = {
+            'First Name': first_name,
+            'Last Name': last_name,
+            'Email': email,
+            'Courses': courses,
+            'Favorite Program': address
+        }
+
+# Create a dropdown for student names
+student_dropdown = widgets.Dropdown(
+    options=list(students.keys()),
+    description='Student:',
+    style={'description_width': 'initial'},
+    layout=widgets.Layout(width='50%')
+)
+
+# Create text boxes for displaying student details
+first_name_text = widgets.Text(
+    value='',
+    description='First Name:',
+    layout=widgets.Layout(width='50%')
+)
+
+last_name_text = widgets.Text(
+    value='',
+    description='Last Name:',
+    layout=widgets.Layout(width='50%')
+)
+
+email_text = widgets.Text(
+    value='',
+    description='Email:',
+    layout=widgets.Layout(width='50%')
+)
+
+courses_text = widgets.Text(
+    value='',
+    description='Courses:',
+    layout=widgets.Layout(width='50%')
+)
+
+favorite_program_text = widgets.Text(
+    value='',
+    description='Favorite Program:',
+    layout=widgets.Layout(width='50%')
+)
+
+# Create an update button
+update_button = widgets.Button(
+    description='Update',
+    button_style='success',
+    layout=widgets.Layout(width='50%')
+)
+
+# Create an output widget to display the student details
+output = widgets.VBox([first_name_text, last_name_text, email_text, courses_text, favorite_program_text, update_button])
+
+def on_student_selected(change):
+    student_name = change['new']
+    student_details = students[student_name]
+    first_name_text.value = student_details['First Name']
+    last_name_text.value = student_details['Last Name']
+    email_text.value = student_details['Email']
+    courses_text.value = student_details['Courses']
+    favorite_program_text.value = student_details['Favorite Program']
+
+def on_update_button_clicked(b):
+    student_name = student_dropdown.value
+    students[student_name]['First Name'] = first_name_text.value
+    students[student_name]['Last Name'] = last_name_text.value
+    students[student_name]['Email'] = email_text.value
+    students[student_name]['Courses'] = courses_text.value
+    students[student_name]['Favorite Program'] = favorite_program_text.value
+
+    # Update the student details in the original JSON file
+    for line in file:
+        if line["first_name"] == students[student_name]['First Name'] and line["last_name"] == students[student_name]['Last Name']:
+            line["email"] = students[student_name]['Email']
+            line["cors"] = students[student_name]['Courses']
+            line["adress"] = students[student_name]['Favorite Program']
+
+    # Write the updated student details to the JSON file
+    with open(file_path, 'w') as fid:
+        json.dump(file, fid, indent=4)
+
+    display(HTML("<p style='color:green;'>Updated successfully!</p>"))
+
+# Set up the observers
+student_dropdown.observe(on_student_selected, names='value')
+update_button.on_click(on_update_button_clicked)
+
+# Display the widgets with some styling
+display(HTML("<h2 style='color:blue;'>Student Details Form</h2>"))
+display(student_dropdown, output)
